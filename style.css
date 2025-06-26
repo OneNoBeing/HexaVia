@@ -1,0 +1,29 @@
+body {
+    background: #222;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+canvas {
+    background: #333;
+    margin-top: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px #0008;
+}
+
+.menu {
+    margin: 20px auto;
+    background: #222a;
+    padding: 16px 24px;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.menu label, .menu select, .menu button, .menu input[type="color"] {
+    font-size: 1rem;
+    margin: 0 8px;
+}
+.menu input[type="file"] {
+    margin-left: 8px;
+}
