@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HexaVia</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body style="background:#23272e; color:#fff;">
+    <h1 id="appTitle" style="font-family:inherit;font-weight:bold;font-size:2.1em;color:#fff;margin:18px 0 8px 24px;">HexaVia</h1>
+    <select id="langSelector" style="margin:12px 24px 0 0;padding:4px 10px;border-radius:6px;background:#23272e;color:#fff;font-weight:bold;font-size:1em;float:right;">
+        <option value="pt">PT</option>
+        <option value="en">EN</option>
+        <option value="es">ES</option>
+        <option value="fr">FR</option>
+        <option value="it">IT</option>
+        <option value="de">DE</option>
+    </select>
+    <form id="menu" style="display:flex;align-items:center;gap:12px;margin:0 0 18px 24px;">
+        <label for="cols" style="color:#fff;margin-right:4px;">Cols:</label>
+        <input type="number" id="cols" value="12" min="2" max="50" style="width:48px;margin-right:12px;">
+        <label for="rows" style="color:#fff;margin-right:4px;">Rows:</label>
+        <input type="number" id="rows" value="10" min="2" max="50" style="width:48px;">
+        <button type="submit" style="padding:8px 18px;border-radius:6px;background:#1976d2;color:#fff;border:none;font-weight:bold;cursor:pointer;margin-left:8px;">Criar Grid</button>
+        <button type="button" id="rotateBtn" style="padding:8px 18px;border-radius:6px;background:#222;color:#fff;border:none;font-weight:bold;cursor:pointer;margin-left:8px;">Novo Grid 90°</button>
+    </form>
+    <div id="paletas" style="display: flex; align-items: flex-start; gap: 32px; margin-bottom: 0; margin-left: 0;"></div>
+    <canvas id="hexCanvas" width="900" height="700" style="display: block; margin: 0 auto;"></canvas>
+    <script src="script.js"></script>
+</body>
+</html>
