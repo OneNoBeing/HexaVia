@@ -248,11 +248,11 @@ function renderPaletteColors() {
             renderPaletteColors();
         };
         btnWrapper.appendChild(btn);
-        // Só permite remover cores adicionadas (não as 7 iniciais)
-        if (idx >= 7) {
+        // Só permite remover cores adicionadas (não as 9 iniciais)
+        if (idx >= 9) {
             const delBtn = document.createElement('button');
             delBtn.innerHTML = '×';
-            delBtn.title = 'Remover cor';
+            delBtn.title = 'Remove color';
             delBtn.style.position = 'absolute';
             delBtn.style.top = '-7px';
             delBtn.style.right = '-7px';
@@ -277,10 +277,10 @@ function renderPaletteColors() {
         }
         paletteMenu.appendChild(btnWrapper);
     });
-    // Botão de adicionar cor
+    // Add color button
     const addColorBtn = document.createElement('button');
     addColorBtn.innerHTML = '<span style="font-size:1.5em;line-height:1;">+</span>';
-    addColorBtn.title = 'Adicionar cor';
+    addColorBtn.title = 'Add color';
     addColorBtn.style.width = '32px';
     addColorBtn.style.height = '32px';
     addColorBtn.style.fontWeight = 'bold';
@@ -363,7 +363,7 @@ function renderTexturePalette() {
             // Botão de remover imagem
             const delImgBtn = document.createElement('button');
             delImgBtn.innerHTML = '×';
-            delImgBtn.title = 'Remover textura';
+            delImgBtn.title = 'Remove texture';
             delImgBtn.style.position = 'absolute';
             delImgBtn.style.top = '-7px';
             delImgBtn.style.right = '-7px';
@@ -399,7 +399,7 @@ function renderTexturePalette() {
         btn.style.cursor = 'pointer';
         btn.style.borderRadius = '8px';
         btn.style.transition = 'border 0.2s';
-        btn.title = 'Selecionar pasta de textura';
+        btn.title = 'Select texture folder';
         btn.innerText = folder.images.length > 0 ? '🎲' : '+';
         btn.onclick = () => {
             if (selectedTextureFolder === idx && useTexture) {
@@ -417,7 +417,7 @@ function renderTexturePalette() {
         // Botão para adicionar textura à pasta
         const addBtn = document.createElement('button');
         addBtn.innerHTML = '<span style="font-size:1.2em;line-height:1;">+</span>';
-        addBtn.title = 'Adicionar textura à pasta';
+        addBtn.title = 'Add texture to folder';
         addBtn.style.width = '22px';
         addBtn.style.height = '22px';
         addBtn.style.fontWeight = 'bold';
@@ -459,7 +459,7 @@ function renderTexturePalette() {
         if (folder.images.length === 0) {
             const delFolderBtn = document.createElement('button');
             delFolderBtn.innerHTML = '×';
-            delFolderBtn.title = 'Remover pasta';
+            delFolderBtn.title = 'Remove folder';
             delFolderBtn.style.position = 'absolute';
             delFolderBtn.style.top = '-7px';
             delFolderBtn.style.left = '-7px';
@@ -485,10 +485,10 @@ function renderTexturePalette() {
         }
         textureMenu.appendChild(folderBtn);
     });
-    // Botão de adicionar nova pasta
+    // Add new folder button
     const addFolderBtn = document.createElement('button');
     addFolderBtn.innerHTML = '<span style="font-size:2em;line-height:1;">+</span>';
-    addFolderBtn.title = 'Nova pasta de texturas';
+    addFolderBtn.title = 'New texture folder';
     addFolderBtn.style.width = '40px';
     addFolderBtn.style.height = '40px';
     addFolderBtn.style.fontWeight = 'bold';
@@ -539,11 +539,15 @@ if (textureInput) {
     });
 }
 
-// Adiciona botão para criar grid rotacionado 90 graus
+// Remove qualquer botão "Novo Grid 90°" deixado no HTML (duplicado)
+const oldRotateBtn = document.querySelector('#rotateBtn');
+if (oldRotateBtn) oldRotateBtn.remove();
+
+// Add button to create 90-degree rotated grid
 const menuForm = document.getElementById('menu');
 const rotateBtn = document.createElement('button');
 rotateBtn.type = 'button';
-rotateBtn.textContent = 'Novo Grid 90°';
+rotateBtn.textContent = 'New 90° Grid';
 rotateBtn.style.padding = '8px 18px';
 rotateBtn.style.borderRadius = '6px';
 rotateBtn.style.background = '#222';
@@ -559,11 +563,20 @@ rotateBtn.onclick = () => {
     createGrid(cols, rows, isRotated);
 };
 
-// === Botões de Salvar e Carregar Projeto ===
+// Remove duplicate "New 90° Grid" button if it appears on the left (if exists)
+const menuFormBtns = document.querySelectorAll('form#menu > #rotateBtn');
+if (menuFormBtns.length > 1) {
+    // Remove all but the last (the functional one created via script)
+    for (let i = 0; i < menuFormBtns.length - 1; i++) {
+        menuFormBtns[i].remove();
+    }
+}
+
+// === Save and Load Project Buttons ===
 const saveBtn = document.createElement('button');
 saveBtn.type = 'button';
 saveBtn.id = 'saveProjectBtn';
-saveBtn.textContent = 'Salvar Projeto';
+saveBtn.textContent = 'Save Project';
 saveBtn.style.padding = '8px 18px';
 saveBtn.style.borderRadius = '6px';
 saveBtn.style.background = '#1976d2';
@@ -576,7 +589,7 @@ saveBtn.style.marginLeft = '8px';
 const loadBtn = document.createElement('button');
 loadBtn.type = 'button';
 loadBtn.id = 'loadProjectBtn';
-loadBtn.textContent = 'Carregar Projeto';
+loadBtn.textContent = 'Load Project';
 loadBtn.style.padding = '8px 18px';
 loadBtn.style.borderRadius = '6px';
 loadBtn.style.background = '#43a047';
@@ -598,7 +611,7 @@ function exportProject() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'hexavia-projeto.json';
+    a.download = 'hexavia-project.json';
     document.body.appendChild(a);
     a.click();
     setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
@@ -620,7 +633,7 @@ function importProject(json) {
         drawGrid();
         renderPaletteColors();
         renderTexturePalette();
-    } catch (e) { alert('Erro ao carregar projeto!'); }
+    } catch (e) { alert('Failed to load project!'); }
 }
 
 saveBtn.onclick = exportProject;
@@ -642,11 +655,3 @@ loadBtn.onclick = () => {
     };
     input.click();
 };
-
-// Remove o botão de idioma (caso exista)
-const langSelector = document.getElementById('langSelector');
-if (langSelector) langSelector.remove();
-
-// Remove o botão "Novo Grid 90°" duplicado da esquerda, mantendo apenas o criado via script
-const leftRotateBtn = document.querySelector('form#menu > #rotateBtn');
-if (leftRotateBtn) leftRotateBtn.remove();
