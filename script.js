@@ -655,3 +655,181 @@ loadBtn.onclick = () => {
     };
     input.click();
 };
+
+// === PALETA FIXA DE TEXTURAS (NÃO EDITÁVEL) ===
+// Definição das texturas fixas agrupadas por prefixo
+const fixedTextureFolders = [
+    { name: 'Brick', path: 'Textures/Roads/Brick', files: [
+        'T1-Brick-1.png','T1-Brick-2.png','T1-Brick-3.png','T1-Decorative-Brick-1.png','T2-Brick-1.png','T3-Brick-1.png','T3-Brick-2.png','T3-Decorative-Brick-1.png','T3-Decorative-Brick-2.png'] },
+    { name: 'Stone', path: 'Textures/Roads/Stone', files: [
+        'T1-Cobblenstone-1.png','T1-Cobblenstone-2.png','T1-Cobblenstone-3.png','T1-Gravel-1.png','T1-Gravel-2.png','T1-Gravel-3.png','T1-Stone-1.png','T1-Stone-2.png','T1-Stone-3.png','T2-Cobblestone-1.png','T2-Cobblestone-2.png','T2-Gravel-1.png','T2-Gravel-2.png','T2-Stone-1.png','T2-Stone-2.png','T2-Stone-3.png','T2-Stone-4.png','T3-Cobblestone-1.png','T3-Cobblestone-2.png','T3-Gravel-1.png','T3-Gravel-2.png','T3-Stone-1.png','T3-Stone-2.png','T4-Cobblestone-1.png','T4-Cobblestone-2.png','T4-Cobblestone-3.png','T4-Cobblestone-4.png','T4-Gravel-1.png','T4-Gravel-2.png','T4-Stone-1.png','T4-Stone-2.png','T4-Stone-3.png'] },
+    { name: 'Wood', path: 'Textures/Roads/Wood', files: [
+        'T1-Decorative-Wood-1.png','T1-Plank-1.png','T1-Plank-2.png','T1-Wood-1.png','T1-Wood-2.png','T2-Decorative-Wood-1.png','T2-Plank-1.png','T2-Plank-2.png','T2-Wood-1.png','T2-Wood-2.png','T2-Wood-3.png','T3-3Wood-1.png','T3-Decorative-Wood-1.png','T3-Wood-2.png','T4-Decorative-Wood-1.png','T4-Wood-1.png','T4-Wood-2.png','T4-Wood-3.png'] }
+];
+
+function groupFixedTextures(files) {
+    const groups = {};
+    files.forEach(file => {
+        const base = file.replace(/\.png$/i, '');
+        const prefix = base.replace(/-\d+$/, '');
+        if (!groups[prefix]) groups[prefix] = [];
+        groups[prefix].push(file);
+    });
+    return groups;
+}
+
+let fixedTexturePalette = [];
+fixedTextureFolders.forEach(folder => {
+    const groups = groupFixedTextures(folder.files);
+    const textures = Object.keys(groups).map(key => {
+        const images = groups[key].map(filename => {
+            const img = new window.Image();
+            img.src = folder.path + '/' + filename;
+            return img;
+        });
+        return { name: key.replace(/T(\d+)-/, 'T$1 '), images };
+    });
+    fixedTexturePalette.push({ name: folder.name, textures });
+});
+
+let selectedFixedTexturePalette = null; // null = cor, 0 = Brick, 1 = Stone, 2 = Wood
+let selectedFixedTexture = 0;
+
+function renderFixedTexturePalette() {
+    // Cria container se não existir
+    let fixedMenu = document.getElementById('fixed-texture-menu');
+    if (!fixedMenu) {
+        fixedMenu = document.createElement('div');
+        fixedMenu.id = 'fixed-texture-menu';
+        fixedMenu.style.display = 'flex';
+        fixedMenu.style.flexDirection = 'row';
+        fixedMenu.style.alignItems = 'center';
+        fixedMenu.style.gap = '12px';
+        fixedMenu.style.margin = '0 0 20px 0';
+        fixedMenu.style.background = 'rgba(30,32,36,0.95)';
+        fixedMenu.style.borderRadius = '12px';
+        fixedMenu.style.padding = '10px 18px';
+        fixedMenu.style.boxShadow = '0 2px 12px 0 rgba(0,0,0,0.10)';
+        document.getElementById('paletas').appendChild(fixedMenu);
+    }
+    fixedMenu.innerHTML = '';
+    // Botão para voltar para cor
+    const colorBtn = document.createElement('button');
+    colorBtn.textContent = 'Cor';
+    colorBtn.style.marginRight = '12px';
+    colorBtn.style.padding = '6px 16px';
+    colorBtn.style.borderRadius = '8px';
+    colorBtn.style.background = selectedFixedTexturePalette === null ? '#1976d2' : '#23272e';
+    colorBtn.style.color = '#fff';
+    colorBtn.style.border = selectedFixedTexturePalette === null ? '2px solid #1976d2' : '1.5px solid #444';
+    colorBtn.style.fontWeight = 'bold';
+    colorBtn.style.cursor = 'pointer';
+    colorBtn.onclick = () => {
+        selectedFixedTexturePalette = null;
+        useTexture = false;
+        renderFixedTexturePalette();
+    };
+    fixedMenu.appendChild(colorBtn);
+    // Paletas (Brick, Stone, Wood)
+    fixedTexturePalette.forEach((pal, palIdx) => {
+        const palBtn = document.createElement('button');
+        palBtn.textContent = pal.name;
+        palBtn.style.marginRight = '12px';
+        palBtn.style.padding = '6px 16px';
+        palBtn.style.borderRadius = '8px';
+        palBtn.style.background = selectedFixedTexturePalette === palIdx ? '#1976d2' : '#23272e';
+        palBtn.style.color = '#fff';
+        palBtn.style.border = selectedFixedTexturePalette === palIdx ? '2px solid #1976d2' : '1.5px solid #444';
+        palBtn.style.fontWeight = 'bold';
+        palBtn.style.cursor = 'pointer';
+        palBtn.onclick = () => {
+            selectedFixedTexturePalette = palIdx;
+            selectedFixedTexture = 0;
+            useTexture = true;
+            renderFixedTexturePalette();
+        };
+        fixedMenu.appendChild(palBtn);
+    });
+    // Texturas da paleta selecionada
+    if (selectedFixedTexturePalette !== null) {
+        const pal = fixedTexturePalette[selectedFixedTexturePalette];
+        pal.textures.forEach((tex, texIdx) => {
+            const texBtn = document.createElement('button');
+            texBtn.style.marginRight = '8px';
+            texBtn.style.padding = '0';
+            texBtn.style.width = '44px';
+            texBtn.style.height = '44px';
+            texBtn.style.borderRadius = '8px';
+            texBtn.style.background = selectedFixedTexture === texIdx ? '#1976d2' : '#23272e';
+            texBtn.style.border = selectedFixedTexture === texIdx ? '2.5px solid #1976d2' : '1.5px solid #444';
+            texBtn.style.cursor = 'pointer';
+            texBtn.title = tex.name;
+            texBtn.onclick = () => {
+                selectedFixedTexture = texIdx;
+                useTexture = true;
+                renderFixedTexturePalette();
+            };
+            tex.images.forEach(img => {
+                const thumb = document.createElement('img');
+                thumb.src = img.src;
+                thumb.style.width = '18px';
+                thumb.style.height = '18px';
+                thumb.style.objectFit = 'cover';
+                thumb.style.margin = '2px';
+                texBtn.appendChild(thumb);
+            });
+            fixedMenu.appendChild(texBtn);
+        });
+    }
+}
+
+// Inicializa a paleta fixa ao carregar
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderFixedTexturePalette);
+} else {
+    renderFixedTexturePalette();
+}
+
+// Altera o click do canvas para usar a paleta fixa se selecionada
+const originalCanvasClick = canvas.onclick;
+canvas.addEventListener('click', function(e) {
+    if (selectedFixedTexturePalette !== null) {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        let found = false;
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                let x, y;
+                if (isRotated) {
+                    y = hexRadius + row * hexRadius * 1.5;
+                    x = hexHeight / 2 + col * hexHeight + (row % 2) * (hexHeight / 2);
+                } else {
+                    x = hexRadius + col * hexRadius * 1.5;
+                    y = hexRadius + row * hexHeight + (col % 2) * (hexHeight / 2);
+                }
+                if (pointInHex(mx, my, x, y)) {
+                    const pal = fixedTexturePalette[selectedFixedTexturePalette];
+                    const tex = pal.textures[selectedFixedTexture];
+                    if (tex && tex.images.length > 0) {
+                        const img = tex.images[Math.floor(Math.random() * tex.images.length)];
+                        if (grid[row][col].texture === img) {
+                            grid[row][col].texture = null;
+                            grid[row][col].color = '#4fc3f7';
+                        } else {
+                            grid[row][col].texture = img;
+                            grid[row][col].color = '#fff';
+                        }
+                    }
+                    drawGrid();
+                    expandIfNearBorder(row, col);
+                    found = true;
+                    break;
+                }
+            }
+            if (found) break;
+        }
+        return;
+    }
+    originalCanvasClick.call(canvas, e);
+});
