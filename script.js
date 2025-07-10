@@ -6,24 +6,18 @@ const rowsSelect = document.getElementById('rows');
 const colorPicker = document.getElementById('colorPicker');
 const textureInput = document.getElementById('textureInput');
 
+// === VARIÁVEIS GLOBAIS ===
 let hexRadius = 40;
 let hexHeight = Math.sqrt(3) * hexRadius;
 let cols = 12;
 let rows = 10;
 let grid = [];
-let currentColor = colorPicker ? colorPicker.value : '#ffeb3b';
-let textureImg = null;
+let currentColor = '#ffeb3b';
 let useTexture = false;
 let isRotated = false;
+let selectedTextureFolder = null;
 
-if (colorPicker) {
-    colorPicker.addEventListener('input', (e) => {
-        currentColor = e.target.value;
-        useTexture = false;
-    });
-}
-
-// Modifica o grid para suportar cor ou textura
+// === INICIALIZAÇÃO ===
 function createGrid(c, r, rotated = false) {
     cols = c;
     rows = r;
@@ -63,9 +57,16 @@ function drawHex(x, y, cell) {
     }
     ctx.closePath();
     if (cell.texture) {
-        // desenha textura
+        ctx.save();
         ctx.clip();
-        ctx.drawImage(cell.texture, x - hexRadius, y - hexRadius, hexRadius * 2, hexRadius * 2);
+        ctx.translate(x, y);
+        if (isRotated) ctx.rotate(Math.PI / 2);
+        ctx.drawImage(
+            cell.texture,
+            -hexRadius, -hexRadius,
+            hexRadius * 2, hexRadius * 2
+        );
+        ctx.restore();
     } else {
         ctx.fillStyle = cell.color;
         ctx.fill();
@@ -114,7 +115,6 @@ canvas.addEventListener('click', function(e) {
             }
             if (pointInHex(mx, my, x, y)) {
                 if (useTexture && selectedTextureFolder !== null && texturePalette[selectedTextureFolder].images.length > 0) {
-                    // Pasta selecionada: sorteia uma imagem
                     const folder = texturePalette[selectedTextureFolder];
                     const imgs = folder.images;
                     const img = imgs[Math.floor(Math.random() * imgs.length)];
@@ -147,7 +147,6 @@ canvas.addEventListener('click', function(e) {
     }
 });
 
-// Corrige bug: novos hexes criados no grid devem ser objetos { color, texture }
 function expandIfNearBorder(row, col) {
     const margin = 1;
     let expanded = false;
@@ -181,7 +180,7 @@ menu.addEventListener('submit', function(e) {
     e.preventDefault();
     const c = parseInt(colsSelect.value, 10);
     const r = parseInt(rowsSelect.value, 10);
-    createGrid(c, r, isRotated); // Mantém orientação atual
+    createGrid(c, r, isRotated);
 });
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -198,27 +197,15 @@ if (oldTexture) oldTexture.remove();
 // Paleta de cores horizontal com botão de adicionar cor
 // Substituído pelas cores da imagem fornecida, de cima para baixo
 const paletteColors = [
-    '#6b747b', // cinza escuro
-    '#d86d2a', // laranja
-    '#1fa12a', // verde
-    '#1a7cf2', // azul
-    '#f6a6e7', // rosa claro
-    '#f67b8c', // rosa médio
-    '#f6f67b', // amarelo
-    '#1fe2d2', // ciano
-    '#232728'  // preto/cinza escuro
+    '#6b747b', '#d86d2a', '#1fa12a', '#1a7cf2', '#f6a6e7', '#f67b8c', '#f6f67b', '#1fe2d2', '#232728'
 ];
 const paletteMenu = document.createElement('div');
 paletteMenu.className = 'palette-menu';
-paletteMenu.style.display = 'flex';
-paletteMenu.style.flexDirection = 'row';
-paletteMenu.style.alignItems = 'center';
-paletteMenu.style.gap = '8px';
-paletteMenu.style.margin = '0 32px 20px 0';
-paletteMenu.style.background = 'rgba(30,32,36,0.95)';
-paletteMenu.style.borderRadius = '12px';
-paletteMenu.style.padding = '10px 18px';
-paletteMenu.style.boxShadow = '0 2px 12px 0 rgba(0,0,0,0.10)';
+Object.assign(paletteMenu.style, {
+    display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px',
+    margin: '0 32px 20px 0', background: 'rgba(30,32,36,0.95)', borderRadius: '12px',
+    padding: '10px 18px', boxShadow: '0 2px 12px 0 rgba(0,0,0,0.10)'
+});
 
 function renderPaletteColors() {
     paletteMenu.innerHTML = '';
@@ -244,28 +231,21 @@ function renderPaletteColors() {
             } else {
                 currentColor = color;
                 useTexture = false;
+                selectedFixedTexturePalette = null;
+                renderFixedTexturePalette && renderFixedTexturePalette();
             }
             renderPaletteColors();
         };
         btnWrapper.appendChild(btn);
-        // Só permite remover cores adicionadas (não as 9 iniciais)
         if (idx >= 9) {
             const delBtn = document.createElement('button');
             delBtn.innerHTML = '×';
             delBtn.title = 'Remove color';
-            delBtn.style.position = 'absolute';
-            delBtn.style.top = '-7px';
-            delBtn.style.right = '-7px';
-            delBtn.style.width = '18px';
-            delBtn.style.height = '18px';
-            delBtn.style.border = 'none';
-            delBtn.style.background = '#23272e';
-            delBtn.style.color = '#e57373';
-            delBtn.style.fontWeight = 'bold';
-            delBtn.style.fontSize = '1em';
-            delBtn.style.borderRadius = '50%';
-            delBtn.style.cursor = 'pointer';
-            delBtn.style.display = 'none';
+            Object.assign(delBtn.style, {
+                position: 'absolute', top: '-7px', right: '-7px', width: '18px', height: '18px',
+                border: 'none', background: '#23272e', color: '#e57373', fontWeight: 'bold',
+                fontSize: '1em', borderRadius: '50%', cursor: 'pointer', display: 'none'
+            });
             delBtn.onclick = (e) => {
                 e.stopPropagation();
                 paletteColors.splice(idx, 1);
@@ -281,19 +261,12 @@ function renderPaletteColors() {
     const addColorBtn = document.createElement('button');
     addColorBtn.innerHTML = '<span style="font-size:1.5em;line-height:1;">+</span>';
     addColorBtn.title = 'Add color';
-    addColorBtn.style.width = '32px';
-    addColorBtn.style.height = '32px';
-    addColorBtn.style.fontWeight = 'bold';
-    addColorBtn.style.fontSize = '1.2em';
-    addColorBtn.style.border = '1.5px solid #444';
-    addColorBtn.style.background = 'linear-gradient(135deg,#23272e,#2c313a)';
-    addColorBtn.style.color = '#1976d2';
-    addColorBtn.style.cursor = 'pointer';
-    addColorBtn.style.display = 'flex';
-    addColorBtn.style.alignItems = 'center';
-    addColorBtn.style.justifyContent = 'center';
-    addColorBtn.style.borderRadius = '50%';
-    addColorBtn.style.margin = '0';
+    Object.assign(addColorBtn.style, {
+        width: '32px', height: '32px', fontWeight: 'bold', fontSize: '1.2em',
+        border: '1.5px solid #444', background: 'linear-gradient(135deg,#23272e,#2c313a)',
+        color: '#1976d2', cursor: 'pointer', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', borderRadius: '50%', margin: '0'
+    });
     addColorBtn.onclick = () => {
         const colorInput = document.createElement('input');
         colorInput.type = 'color';
@@ -319,17 +292,11 @@ renderPaletteColors();
 let texturePalette = [];
 const textureMenu = document.createElement('div');
 textureMenu.className = 'texture-menu';
-textureMenu.style.display = 'flex';
-textureMenu.style.flexDirection = 'row';
-textureMenu.style.alignItems = 'center';
-textureMenu.style.gap = '12px';
-textureMenu.style.margin = '0 0 20px 0';
-textureMenu.style.background = 'rgba(30,32,36,0.95)';
-textureMenu.style.borderRadius = '12px';
-textureMenu.style.padding = '10px 18px';
-textureMenu.style.boxShadow = '0 2px 12px 0 rgba(0,0,0,0.10)';
-
-let selectedTextureFolder = null;
+Object.assign(textureMenu.style, {
+    display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px',
+    margin: '0 0 20px 0', background: 'rgba(30,32,36,0.95)', borderRadius: '12px',
+    padding: '10px 18px', boxShadow: '0 2px 12px 0 rgba(0,0,0,0.10)'
+});
 
 function renderTexturePalette() {
     textureMenu.innerHTML = '';
@@ -359,6 +326,12 @@ function renderTexturePalette() {
             thumb.style.objectFit = 'cover';
             thumb.style.border = '1px solid #222';
             thumb.style.borderRadius = '4px';
+            // Rotaciona a miniatura se o canvas estiver rotacionado
+            if (isRotated) {
+                thumb.style.transform = 'rotate(90deg)';
+            } else {
+                thumb.style.transform = '';
+            }
             thumbWrapper.appendChild(thumb);
             // Botão de remover imagem
             const delImgBtn = document.createElement('button');
@@ -510,14 +483,12 @@ function renderTexturePalette() {
 }
 renderTexturePalette();
 
-// Adiciona as paletas horizontalmente acima do canvas
+// === INTEGRAÇÃO DAS PALETAS NA UI ===
 const paletasContainer = document.getElementById('paletas');
 paletasContainer.innerHTML = '';
-paletasContainer.style.display = 'flex';
-paletasContainer.style.flexDirection = 'row';
-paletasContainer.style.alignItems = 'center';
-paletasContainer.style.gap = '32px';
-paletasContainer.style.margin = '0 0 24px 0';
+Object.assign(paletasContainer.style, {
+    display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '32px', margin: '0 0 24px 0'
+});
 paletasContainer.appendChild(paletteMenu);
 paletasContainer.appendChild(textureMenu);
 
@@ -548,57 +519,32 @@ const menuForm = document.getElementById('menu');
 const rotateBtn = document.createElement('button');
 rotateBtn.type = 'button';
 rotateBtn.textContent = 'New 90° Grid';
-rotateBtn.style.padding = '8px 18px';
-rotateBtn.style.borderRadius = '6px';
-rotateBtn.style.background = '#222';
-rotateBtn.style.color = '#fff';
-rotateBtn.style.border = 'none';
-rotateBtn.style.fontWeight = 'bold';
-rotateBtn.style.cursor = 'pointer';
-rotateBtn.style.marginLeft = '8px';
+Object.assign(rotateBtn.style, {
+    padding: '8px 18px', borderRadius: '6px', background: '#222', color: '#fff',
+    border: 'none', fontWeight: 'bold', cursor: 'pointer', marginLeft: '8px'
+});
 menuForm.appendChild(rotateBtn);
-
 rotateBtn.onclick = () => {
     isRotated = !isRotated;
     createGrid(cols, rows, isRotated);
 };
 
-// Remove duplicate "New 90° Grid" button if it appears on the left (if exists)
-const menuFormBtns = document.querySelectorAll('form#menu > #rotateBtn');
-if (menuFormBtns.length > 1) {
-    // Remove all but the last (the functional one created via script)
-    for (let i = 0; i < menuFormBtns.length - 1; i++) {
-        menuFormBtns[i].remove();
-    }
-}
-
-// === Save and Load Project Buttons ===
 const saveBtn = document.createElement('button');
 saveBtn.type = 'button';
 saveBtn.id = 'saveProjectBtn';
 saveBtn.textContent = 'Save Project';
-saveBtn.style.padding = '8px 18px';
-saveBtn.style.borderRadius = '6px';
-saveBtn.style.background = '#1976d2';
-saveBtn.style.color = '#fff';
-saveBtn.style.border = 'none';
-saveBtn.style.fontWeight = 'bold';
-saveBtn.style.cursor = 'pointer';
-saveBtn.style.marginLeft = '8px';
-
+Object.assign(saveBtn.style, {
+    padding: '8px 18px', borderRadius: '6px', background: '#1976d2', color: '#fff',
+    border: 'none', fontWeight: 'bold', cursor: 'pointer', marginLeft: '8px'
+});
 const loadBtn = document.createElement('button');
 loadBtn.type = 'button';
 loadBtn.id = 'loadProjectBtn';
 loadBtn.textContent = 'Load Project';
-loadBtn.style.padding = '8px 18px';
-loadBtn.style.borderRadius = '6px';
-loadBtn.style.background = '#43a047';
-loadBtn.style.color = '#fff';
-loadBtn.style.border = 'none';
-loadBtn.style.fontWeight = 'bold';
-loadBtn.style.cursor = 'pointer';
-loadBtn.style.marginLeft = '8px';
-
+Object.assign(loadBtn.style, {
+    padding: '8px 18px', borderRadius: '6px', background: '#43a047', color: '#fff',
+    border: 'none', fontWeight: 'bold', cursor: 'pointer', marginLeft: '8px'
+});
 menu.appendChild(saveBtn);
 menu.appendChild(loadBtn);
 
@@ -667,11 +613,18 @@ const fixedTextureFolders = [
         'T1-Decorative-Wood-1.png','T1-Plank-1.png','T1-Plank-2.png','T1-Wood-1.png','T1-Wood-2.png','T2-Decorative-Wood-1.png','T2-Plank-1.png','T2-Plank-2.png','T2-Wood-1.png','T2-Wood-2.png','T2-Wood-3.png','T3-3Wood-1.png','T3-Decorative-Wood-1.png','T3-Wood-2.png','T4-Decorative-Wood-1.png','T4-Wood-1.png','T4-Wood-2.png','T4-Wood-3.png'] }
 ];
 
-function groupFixedTextures(files) {
+function groupFixedTextures(files, category) {
     const groups = {};
     files.forEach(file => {
+        // Para Wood, ignorar arquivos que não sejam Plank, Wood ou Decorative Wood
+        if (category === 'Wood' && !(/Plank|Wood|Decorative/i.test(file))) return;
+        // Para Stone, ignorar arquivos que não sejam Gravel, Cobble, Stone
+        if (category === 'Stone' && !(/Gravel|Cobble|Stone/i.test(file))) return;
         const base = file.replace(/\.png$/i, '');
         const prefix = base.replace(/-\d+$/, '');
+        // Corrige bug do 3Wood: só aceita prefixos válidos
+        if (category === 'Wood' && !/^T\d+-(Plank|Wood|Decorative-Wood)$/i.test(prefix)) return;
+        if (category === 'Stone' && !/^T\d+-(Gravel|Cobblestone|Stone)$/i.test(prefix)) return;
         if (!groups[prefix]) groups[prefix] = [];
         groups[prefix].push(file);
     });
@@ -680,14 +633,16 @@ function groupFixedTextures(files) {
 
 let fixedTexturePalette = [];
 fixedTextureFolders.forEach(folder => {
-    const groups = groupFixedTextures(folder.files);
+    const groups = groupFixedTextures(folder.files, folder.name);
     const textures = Object.keys(groups).map(key => {
         const images = groups[key].map(filename => {
             const img = new window.Image();
             img.src = folder.path + '/' + filename;
             return img;
         });
-        return { name: key.replace(/T(\d+)-/, 'T$1 '), images };
+        // Preview: pega -1.png se existir, senão a primeira
+        let previewImg = images.find(img => /-1\.png$/i.test(img.src)) || images[0];
+        return { name: key.replace(/T(\d+)-/, 'T$1 '), images, previewImg };
     });
     fixedTexturePalette.push({ name: folder.name, textures });
 });
@@ -769,15 +724,16 @@ function renderFixedTexturePalette() {
                 useTexture = true;
                 renderFixedTexturePalette();
             };
-            tex.images.forEach(img => {
+            // Mostra só a imagem de preview
+            if (tex.previewImg) {
                 const thumb = document.createElement('img');
-                thumb.src = img.src;
-                thumb.style.width = '18px';
-                thumb.style.height = '18px';
+                thumb.src = tex.previewImg.src;
+                thumb.style.width = '32px';
+                thumb.style.height = '32px';
                 thumb.style.objectFit = 'cover';
                 thumb.style.margin = '2px';
                 texBtn.appendChild(thumb);
-            });
+            }
             fixedMenu.appendChild(texBtn);
         });
     }
