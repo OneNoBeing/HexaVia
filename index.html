@@ -6,17 +6,30 @@
     <title>HexaVia</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body style="background:#23272e; color:#fff;">
-    <h1 id="appTitle" style="font-family:inherit;font-weight:bold;font-size:2.1em;color:#fff;margin:18px 0 8px 24px;">HexaVia</h1>
-    <form id="menu" style="display:flex;align-items:center;gap:12px;margin:0 0 18px 24px;">
-        <label for="cols" style="color:#fff;margin-right:4px;">Cols:</label>
-        <input type="number" id="cols" value="12" min="2" max="50" style="width:48px;margin-right:12px;">
-        <label for="rows" style="color:#fff;margin-right:4px;">Rows:</label>
-        <input type="number" id="rows" value="10" min="2" max="50" style="width:48px;">
-        <button type="submit" style="padding:8px 18px;border-radius:6px;background:#1976d2;color:#fff;border:none;font-weight:bold;cursor:pointer;margin-left:8px;">Create Grid</button>
-    </form>
-    <div id="paletas" style="display: flex; align-items: flex-start; gap: 32px; margin-bottom: 0; margin-left: 0;"></div>
-    <canvas id="hexCanvas" width="900" height="700" style="display: block; margin: 0 auto;"></canvas>
+<body>
+    <div id="main-layout">
+        <header id="topbar">
+            <h1 id="appTitle">HexaVia</h1>
+            <form id="menu">
+                <label for="cols">Cols:</label>
+                <input type="number" id="cols" value="12" min="2" max="50">
+                <label for="rows">Rows:</label>
+                <input type="number" id="rows" value="10" min="2" max="50">
+                <button type="submit">Create Grid</button>
+                <button type="button" id="rotateBtn">New 90° Grid</button>
+                <button type="button" id="saveProjectBtn">Save Project</button>
+                <button type="button" id="loadProjectBtn">Load Project</button>
+            </form>
+        </header>
+        <div id="workspace">
+            <aside id="sidebar">
+                <div id="paletas"></div>
+            </aside>
+            <main id="canvas-area">
+                <canvas id="hexCanvas" width="900" height="700"></canvas>
+            </main>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
