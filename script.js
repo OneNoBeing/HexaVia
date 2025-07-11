@@ -114,7 +114,20 @@ canvas.addEventListener('click', function(e) {
                 y = hexRadius + row * hexHeight + (col % 2) * (hexHeight / 2);
             }
             if (pointInHex(mx, my, x, y)) {
-                if (useTexture && selectedTextureFolder !== null && texturePalette[selectedTextureFolder].images.length > 0) {
+                if (selectedFixedTexturePalette !== null) {
+                    const pal = fixedTexturePalette[selectedFixedTexturePalette];
+                    const tex = pal.textures[selectedFixedTexture];
+                    if (tex && tex.images.length > 0) {
+                        const img = tex.images[Math.floor(Math.random() * tex.images.length)];
+                        if (grid[row][col].texture === img) {
+                            grid[row][col].texture = null;
+                            grid[row][col].color = '#4fc3f7';
+                        } else {
+                            grid[row][col].texture = img;
+                            grid[row][col].color = '#fff';
+                        }
+                    }
+                } else if (useTexture && selectedTextureFolder !== null && texturePalette[selectedTextureFolder].images.length > 0) {
                     const folder = texturePalette[selectedTextureFolder];
                     const imgs = folder.images;
                     const img = imgs[Math.floor(Math.random() * imgs.length)];
@@ -138,7 +151,6 @@ canvas.addEventListener('click', function(e) {
                     grid[row][col].color = '#4fc3f7';
                 }
                 drawGrid();
-                expandIfNearBorder(row, col);
                 found = true;
                 break;
             }
@@ -486,9 +498,11 @@ renderTexturePalette();
 // === INTEGRAÇÃO DAS PALETAS NA UI ===
 const paletasContainer = document.getElementById('paletas');
 paletasContainer.innerHTML = '';
-Object.assign(paletasContainer.style, {
-    display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '32px', margin: '0 0 24px 0'
-});
+paletasContainer.style.display = 'flex';
+paletasContainer.style.flexDirection = 'column';
+paletasContainer.style.alignItems = 'flex-end';
+paletasContainer.style.gap = '32px';
+paletasContainer.style.margin = '0';
 paletasContainer.appendChild(paletteMenu);
 paletasContainer.appendChild(textureMenu);
 
@@ -510,12 +524,24 @@ if (textureInput) {
     });
 }
 
-// Remove qualquer botão "Novo Grid 90°" deixado no HTML (duplicado)
-const oldRotateBtn = document.querySelector('#rotateBtn');
-if (oldRotateBtn) oldRotateBtn.remove();
+// Remove qualquer botão duplicado de Create Grid, Save Project e Load Project
+const menuForm = document.getElementById('menu');
+['Create Grid', 'Save Project', 'Load Project'].forEach(text => {
+    const btns = Array.from(menuForm.querySelectorAll('button')).filter(b => b.textContent.trim() === text);
+    if (btns.length > 1) {
+        for (let i = 1; i < btns.length; i++) btns[i].remove();
+    }
+});
+
+// Remove Save Project, Load Project e New 90° Grid do HTML (caso estejam no form)
+const saveBtnHtml = document.getElementById('saveProjectBtn');
+if (saveBtnHtml) saveBtnHtml.remove();
+const loadBtnHtml = document.getElementById('loadProjectBtn');
+if (loadBtnHtml) loadBtnHtml.remove();
+const rotateBtnHtml = document.getElementById('rotateBtn');
+if (rotateBtnHtml) rotateBtnHtml.remove();
 
 // Add button to create 90-degree rotated grid
-const menuForm = document.getElementById('menu');
 const rotateBtn = document.createElement('button');
 rotateBtn.type = 'button';
 rotateBtn.textContent = 'New 90° Grid';
@@ -523,7 +549,7 @@ Object.assign(rotateBtn.style, {
     padding: '8px 18px', borderRadius: '6px', background: '#222', color: '#fff',
     border: 'none', fontWeight: 'bold', cursor: 'pointer', marginLeft: '8px'
 });
-menuForm.appendChild(rotateBtn);
+menu.appendChild(rotateBtn);
 rotateBtn.onclick = () => {
     isRotated = !isRotated;
     createGrid(cols, rows, isRotated);
@@ -651,92 +677,65 @@ let selectedFixedTexturePalette = null; // null = cor, 0 = Brick, 1 = Stone, 2 =
 let selectedFixedTexture = 0;
 
 function renderFixedTexturePalette() {
-    // Cria container se não existir
     let fixedMenu = document.getElementById('fixed-texture-menu');
     if (!fixedMenu) {
         fixedMenu = document.createElement('div');
         fixedMenu.id = 'fixed-texture-menu';
-        fixedMenu.style.display = 'flex';
-        fixedMenu.style.flexDirection = 'row';
-        fixedMenu.style.alignItems = 'center';
-        fixedMenu.style.gap = '12px';
-        fixedMenu.style.margin = '0 0 20px 0';
-        fixedMenu.style.background = 'rgba(30,32,36,0.95)';
-        fixedMenu.style.borderRadius = '12px';
-        fixedMenu.style.padding = '10px 18px';
-        fixedMenu.style.boxShadow = '0 2px 12px 0 rgba(0,0,0,0.10)';
         document.getElementById('paletas').appendChild(fixedMenu);
     }
     fixedMenu.innerHTML = '';
-    // Botão para voltar para cor
+
+    // Botão para cor
     const colorBtn = document.createElement('button');
     colorBtn.textContent = 'Cor';
-    colorBtn.style.marginRight = '12px';
-    colorBtn.style.padding = '6px 16px';
-    colorBtn.style.borderRadius = '8px';
-    colorBtn.style.background = selectedFixedTexturePalette === null ? '#1976d2' : '#23272e';
-    colorBtn.style.color = '#fff';
-    colorBtn.style.border = selectedFixedTexturePalette === null ? '2px solid #1976d2' : '1.5px solid #444';
-    colorBtn.style.fontWeight = 'bold';
-    colorBtn.style.cursor = 'pointer';
+    colorBtn.className = 'fixed-palette-title' + (selectedFixedTexturePalette === null ? ' active' : '');
     colorBtn.onclick = () => {
         selectedFixedTexturePalette = null;
         useTexture = false;
         renderFixedTexturePalette();
     };
     fixedMenu.appendChild(colorBtn);
-    // Paletas (Brick, Stone, Wood)
+
+    // Para cada grupo (Brick, Stone, Wood)
     fixedTexturePalette.forEach((pal, palIdx) => {
-        const palBtn = document.createElement('button');
-        palBtn.textContent = pal.name;
-        palBtn.style.marginRight = '12px';
-        palBtn.style.padding = '6px 16px';
-        palBtn.style.borderRadius = '8px';
-        palBtn.style.background = selectedFixedTexturePalette === palIdx ? '#1976d2' : '#23272e';
-        palBtn.style.color = '#fff';
-        palBtn.style.border = selectedFixedTexturePalette === palIdx ? '2px solid #1976d2' : '1.5px solid #444';
-        palBtn.style.fontWeight = 'bold';
-        palBtn.style.cursor = 'pointer';
-        palBtn.onclick = () => {
-            selectedFixedTexturePalette = palIdx;
+        // Grupo
+        const group = document.createElement('div');
+        group.className = 'fixed-palette-group';
+        // Botão do grupo
+        const groupBtn = document.createElement('button');
+        groupBtn.textContent = pal.name;
+        groupBtn.className = 'fixed-palette-title' + (selectedFixedTexturePalette === palIdx ? ' active' : '');
+        groupBtn.onclick = () => {
+            selectedFixedTexturePalette = selectedFixedTexturePalette === palIdx ? null : palIdx;
             selectedFixedTexture = 0;
-            useTexture = true;
+            useTexture = selectedFixedTexturePalette !== null;
             renderFixedTexturePalette();
         };
-        fixedMenu.appendChild(palBtn);
+        group.appendChild(groupBtn);
+        // Lista de texturas (dropdown)
+        const texList = document.createElement('div');
+        texList.className = 'fixed-palette-textures' + (selectedFixedTexturePalette === palIdx ? ' active' : '');
+        if (selectedFixedTexturePalette === palIdx) {
+            pal.textures.forEach((tex, texIdx) => {
+                const texBtn = document.createElement('button');
+                texBtn.className = 'texture-btn' + (selectedFixedTexture === texIdx ? ' selected' : '');
+                texBtn.title = tex.name;
+                texBtn.onclick = () => {
+                    selectedFixedTexture = texIdx;
+                    useTexture = true;
+                    renderFixedTexturePalette();
+                };
+                if (tex.previewImg) {
+                    const thumb = document.createElement('img');
+                    thumb.src = tex.previewImg.src;
+                    texBtn.appendChild(thumb);
+                }
+                texList.appendChild(texBtn);
+            });
+        }
+        group.appendChild(texList);
+        fixedMenu.appendChild(group);
     });
-    // Texturas da paleta selecionada
-    if (selectedFixedTexturePalette !== null) {
-        const pal = fixedTexturePalette[selectedFixedTexturePalette];
-        pal.textures.forEach((tex, texIdx) => {
-            const texBtn = document.createElement('button');
-            texBtn.style.marginRight = '8px';
-            texBtn.style.padding = '0';
-            texBtn.style.width = '44px';
-            texBtn.style.height = '44px';
-            texBtn.style.borderRadius = '8px';
-            texBtn.style.background = selectedFixedTexture === texIdx ? '#1976d2' : '#23272e';
-            texBtn.style.border = selectedFixedTexture === texIdx ? '2.5px solid #1976d2' : '1.5px solid #444';
-            texBtn.style.cursor = 'pointer';
-            texBtn.title = tex.name;
-            texBtn.onclick = () => {
-                selectedFixedTexture = texIdx;
-                useTexture = true;
-                renderFixedTexturePalette();
-            };
-            // Mostra só a imagem de preview
-            if (tex.previewImg) {
-                const thumb = document.createElement('img');
-                thumb.src = tex.previewImg.src;
-                thumb.style.width = '32px';
-                thumb.style.height = '32px';
-                thumb.style.objectFit = 'cover';
-                thumb.style.margin = '2px';
-                texBtn.appendChild(thumb);
-            }
-            fixedMenu.appendChild(texBtn);
-        });
-    }
 }
 
 // Inicializa a paleta fixa ao carregar
@@ -747,7 +746,6 @@ if (document.readyState === 'loading') {
 }
 
 // Altera o click do canvas para usar a paleta fixa se selecionada
-const originalCanvasClick = canvas.onclick;
 canvas.addEventListener('click', function(e) {
     if (selectedFixedTexturePalette !== null) {
         const rect = canvas.getBoundingClientRect();
@@ -778,7 +776,6 @@ canvas.addEventListener('click', function(e) {
                         }
                     }
                     drawGrid();
-                    expandIfNearBorder(row, col);
                     found = true;
                     break;
                 }
@@ -787,5 +784,4 @@ canvas.addEventListener('click', function(e) {
         }
         return;
     }
-    originalCanvasClick.call(canvas, e);
 });
