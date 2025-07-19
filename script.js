@@ -702,7 +702,7 @@ function renderFixedTexturePalette() {
 
     // Botão Cor
     const colorBtn = document.createElement('button');
-    colorBtn.textContent = 'Cor';
+    colorBtn.textContent = 'Color';
     colorBtn.className = 'fixed-palette-title' + (selectedFixedTexturePalette === null && !window.isEraserSelected ? ' active' : '');
     colorBtn.style.display = 'flex';
     colorBtn.style.alignItems = 'center';
